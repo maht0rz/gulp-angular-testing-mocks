@@ -82,6 +82,8 @@ gulp/mocks.js:
 
 src/test/apiary.js
 
+	var responseCache = {};
+
 	var apiary = function(path){
 	  var request = new XMLHttpRequest();
 	  request.open('GET', 'base/mocks/'+path.replace('/','_')+'.json', false);
@@ -89,8 +91,19 @@ src/test/apiary.js
 	  if(request.status == 404){
 	    console.log('Mock not found: '+path);
 	  }
+
+	  if(responseCache[path]){
+	  	return responseCache[path];
+	  }
+
+	  if(request.status = 202){
+	  	responseCache[path] = [request.status, JSON.parse(request.response), {}];
+	  }
+
 	  return [request.status, JSON.parse(request.response), {}];
 	};
+
+
 
 
 mocks/ 
