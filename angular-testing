@@ -1,0 +1,106 @@
+gulp/unit-tests.js:
+
+	'use strict';
+
+	var gulp = require('gulp');
+
+	var chalk = require('chalk');
+
+	var $ = require('gulp-load-plugins')();
+
+
+
+	var wiredep = require('wiredep');
+
+	gulp.task('test', function() { 
+	  var bowerDeps = wiredep({
+	    directory: 'bower_components',
+	    exclude: ['bootstrap-sass-official'],
+	    dependencies: true,
+	    devDependencies: true
+	  });
+
+	  var testFiles = bowerDeps.js.concat([
+	    'src/test/**.js',
+	    'src/{app,components}/**/*.js',
+	    'mocks/**/*.json'
+	  ]);
+
+	  return gulp.src(testFiles)
+	    .pipe($.karma({
+	      configFile: 'karma.conf.js',
+	      action: 'watch'
+	    }));
+	});
+
+
+
+
+
+gulp/mocks.js:
+
+	'use strict';
+
+	var gulp = require('gulp');
+
+	var edit = require('gulp-edit');
+
+	var rename = require('gulp-rename');
+
+	var remoteSrc = require('gulp-remote-src');
+
+	var clean = require('gulp-clean');
+
+	gulp.task('mocks:clean', function(){
+		return gulp.src('./mocks/**/*')
+			.pipe(clean());
+	});
+
+	gulp.task('mocks',['mocks:clean'], function(){
+	  return remoteSrc(['/notes', '/notes/2', '/notes/1'], {
+	    base: 'http://private-a72f0-test3813.apiary-mock.com'
+	  })
+	  .pipe(edit(function(src, cb){
+	    var err = null;
+	    if(src[0] != '['){
+	      src = '['+src+']'
+	    }
+	    cb(err, src);
+	  }))
+	  .pipe(rename(function(path){
+	  	if(path.dirname != '.'){
+	  		path.basename = path.dirname.replace('/','_')+'_'+path.basename;
+	  		path.dirname = '.';
+	  	}
+	    path.extname = '.json'
+	  }))
+	  .pipe(gulp.dest('./mocks'));
+	});
+
+
+
+
+src/test/apiary.js
+
+	var apiary = function(path){
+	  var request = new XMLHttpRequest();
+	  request.open('GET', 'base/mocks/'+path.replace('/','_')+'.json', false);
+	  request.send(null);
+	  if(request.status == 404){
+	    console.log('Mock not found: '+path);
+	  }
+	  return [request.status, JSON.parse(request.response), {}];
+	};
+
+
+mocks/ 
+	- folder to store mocks
+
+
+deps
+	gulp-remote-src
+	gulp-clean
+	gulp-rename
+	gulp-edit
+
+
